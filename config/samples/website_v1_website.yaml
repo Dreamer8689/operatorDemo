@@ -1,0 +1,8 @@
+apiVersion: apps.dreamer123.com/v1
+kind: Website
+metadata:
+  name: website-sample
+spec:
+  host: "dreamer123.com"
+  image: "nginx:latest"
+  replicas: 2
