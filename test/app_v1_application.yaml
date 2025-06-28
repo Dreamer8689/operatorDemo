@@ -1,0 +1,29 @@
+apiVersion: apps.dreamer123.com/v1
+kind: Application
+metadata:
+  name: nginx-sample
+  namespace: default
+spec:
+  replicas: 3
+  deployment:
+    replicas: 3
+    selector:
+      matchLabels:
+        app: nginx
+    template:
+#      metadata:
+#        labels:
+#          app: nginx
+      spec:
+        containers:
+        - name: nginx
+          image: nginx:1.14.2
+          ports:
+          - containerPort: 80
+  service:
+    selector:
+      app: nginx
+    ports:
+    - port: 80
+      targetPort: 80
+    type: NodePort
