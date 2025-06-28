@@ -4,3 +4,13 @@ resources:
 
 configurations:
 - kustomizeconfig.yaml
+
+
+
+#patches:
+#  - path: validating_webhook_patch.yaml
+#    target:
+#      kind: ValidatingWebhookConfiguration
+#  - path: mutating_webhook_patch.yaml
+#    target:
+#      kind: MutatingWebhookConfiguration

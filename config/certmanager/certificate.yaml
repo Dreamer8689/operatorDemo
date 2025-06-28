@@ -1,0 +1,20 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: serving-cert
+  namespace: operatordemo-system
+spec:
+  secretName: webhook-server-cert
+  duration: 2160h # 90d
+  renewBefore: 360h # 15d
+  subject:
+    organizations:
+      - dreamer123.com
+  commonName: webhook-service.operatordemo-system.svc
+  dnsNames:
+    - webhook-service.operatordemo-system.svc
+    - webhook-service.operatordemo-system.svc.cluster.local
+  issuerRef:
+    name: selfsigned-issuer
+    kind: Issuer
+    group: cert-manager.io
