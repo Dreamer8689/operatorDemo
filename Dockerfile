@@ -1,5 +1,6 @@
 # Build the manager binary
-FROM golang:1.19 as builder
+FROM golang:1.23 AS builder
+ENV GOPROXY=https://goproxy.cn,direct
 WORKDIR /workspace
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager cmd/main.go
