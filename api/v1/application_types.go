@@ -17,9 +17,12 @@ limitations under the License.
 package v1
 
 import (
+	"fmt"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -58,6 +61,8 @@ type ApplicationStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
+//+kubebuilder:resource:path=applications,singular=application,scope=Namespaced,shortName=app
+
 // Application is the Schema for the applications API.
 type Application struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -65,6 +70,54 @@ type Application struct {
 
 	Spec   ApplicationSpec   `json:"spec,omitempty"`
 	Status ApplicationStatus `json:"status,omitempty"`
+}
+
+func (r *Application) DeepCopyObject() runtime.Object {
+	//TODO implement me
+	panic("implement me")
+}
+
+var applicationLog = logf.Log.WithName("application-resource")
+
+func (r *Application) Default() {
+	applicationLog.Info("Defaulting for Application", "name", r.GetName())
+	if r.Spec.Deployment.Replicas == nil {
+		r.Spec.Deployment.Replicas = new(int32)
+		*r.Spec.Deployment.Replicas = 3
+	}
+}
+
+func (r *Application) validateApplication() error {
+
+	if r.Spec.Deployment.Replicas == nil {
+		return nil
+	}
+
+	if *r.Spec.Deployment.Replicas < 1 {
+		return nil
+	}
+
+	if *r.Spec.Deployment.Replicas > 10 {
+		return fmt.Errorf("replicas must be less than 10")
+	}
+
+	return nil
+
+}
+
+func (r *Application) ValidateCreate() error {
+	applicationLog.Info("Validating for Application upon creation", "name", r.GetName())
+	return r.validateApplication()
+}
+
+func (r *Application) ValidateUpdate(old runtime.Object) error {
+	applicationLog.Info("Validating for Application upon update", "name", r.GetName())
+	return r.validateApplication()
+}
+
+func (r *Application) ValidateDelete() error {
+	applicationLog.Info("Validating for Application upon deletion", "name", r.GetName())
+	return nil
 }
 
 // +kubebuilder:object:root=true

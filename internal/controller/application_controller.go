@@ -24,7 +24,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -200,8 +202,77 @@ func (r *ApplicationReconciler) reconcileService(ctx context.Context, app *v1.Ap
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *ApplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	setupLog := ctrl.Log.WithName("setup")
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1.Application{}).
-		Named("application").
+		WithEventFilter(predicate.Funcs{
+			CreateFunc: func(event event.CreateEvent) bool {
+				return true
+			},
+			DeleteFunc: func(event event.DeleteEvent) bool {
+				setupLog.Info("The Application has been deleted.",
+					"name", event.Object.GetName())
+				return false
+			},
+			UpdateFunc: func(event event.UpdateEvent) bool {
+				if event.ObjectNew.GetResourceVersion() ==
+					event.ObjectOld.GetResourceVersion() {
+					return false
+				}
+				if reflect.DeepEqual(event.ObjectNew.(*v1.Application).Spec,
+					event.ObjectOld.(*v1.Application).Spec) {
+					return false
+				}
+				return true
+			},
+		}).
+		// 1. Deployment
+		Owns(&appsv1.Deployment{}).
+		WithEventFilter(predicate.Funcs{
+			CreateFunc: func(event event.CreateEvent) bool {
+				return false
+			},
+			DeleteFunc: func(event event.DeleteEvent) bool {
+				setupLog.Info("The Deployment has been deleted.",
+					"name", event.Object.GetName())
+				return true
+			},
+			UpdateFunc: func(event event.UpdateEvent) bool {
+				if event.ObjectNew.GetResourceVersion() ==
+					event.ObjectOld.GetResourceVersion() {
+					return false
+				}
+				if reflect.DeepEqual(event.ObjectNew.(*appsv1.Deployment).Spec,
+					event.ObjectOld.(*appsv1.Deployment).Spec) {
+					return false
+				}
+				return true
+			},
+			GenericFunc: nil,
+		}).
+		// 2. Service
+		Owns(&corev1.Service{}).
+		WithEventFilter(predicate.Funcs{
+			CreateFunc: func(event event.CreateEvent) bool {
+				return false
+			},
+			DeleteFunc: func(event event.DeleteEvent) bool {
+				setupLog.Info("The Service has been deleted.",
+					"name", event.Object.GetName())
+				return true
+			},
+			UpdateFunc: func(event event.UpdateEvent) bool {
+				if event.ObjectNew.GetResourceVersion() ==
+					event.ObjectOld.GetResourceVersion() {
+					return false
+				}
+				if reflect.DeepEqual(event.ObjectNew.(*v1.Application).Spec,
+					event.ObjectOld.(*v1.Application).Spec) {
+					return false
+				}
+				return true
+			},
+		}).
 		Complete(r)
 }
